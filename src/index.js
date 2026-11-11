@@ -4,15 +4,18 @@ const { WebSocketServer } = require("ws");
 const { webRtc } = require("./Routes/webRtc/webRtc");
 const envs=require("dotenv")
 const cors = require("cors");
+const three = require("./Routes/threed/three");
 envs.config()
 const app=express()
 app.use(cors({
   origin: process.env.FRONT_END_URL,
   credentials: true
 }));
+
 app.get("/",(req,res)=>{
   res.send("Server up and running");
 })
+app.use("/three",three)
 const server=httpServer.createServer(app)
 const wss=new WebSocketServer({server})
 wss.on("connection",(ws)=>{
@@ -49,5 +52,6 @@ setInterval(() => {
 server.listen(3000,()=>{
     console.log("Server up and running");
     console.log("Feontend URl",process.env.FRONT_END_URL)
+    console.log("3D Model Paths",process.env.THREE_D_MODEL_PATH)
 })
 
