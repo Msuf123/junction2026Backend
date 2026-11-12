@@ -1,6 +1,11 @@
+const { getICeCredentials } = require("../../Functions/WebRtc/getIceCandidate");
+
 const webRtcRoute=require("express").Router()
-webRtcRoute.get("/getIces",()=>{
-    //send ice cndaiges
+webRtcRoute.get("/getIces",async (req,res,next)=>{
+  const result= await getICeCredentials()
+  console.log(result)
+  res.send(result)
+
 })
 
 function webRtc(ws,message){
@@ -15,4 +20,4 @@ function webRtc(ws,message){
     //when  a and b get ice excchange the ices
  }
 }
-module.exports={webRtc}
+module.exports={webRtc,webRtcRoute}
