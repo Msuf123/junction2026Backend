@@ -15,11 +15,11 @@ three.get("/getModel/:name", (req, res) => {
         }
 
         // Prevent directory traversal and restrict access to GLB files
-        if (!/^[a-zA-Z0-9_-]+\.glb$/.test(name)) {
-            return res.status(400).json({
-                error: "Invalid model name"
-            });
-        }
+       if (!/^[a-zA-Z0-9_-]+\.(glb|vrm)$/i.test(name)) {
+    return res.status(400).json({
+        error: "Invalid model name"
+    });
+}
 
         const filePath = path.resolve(modelPath, name);
 
@@ -29,16 +29,74 @@ three.get("/getModel/:name", (req, res) => {
             });
         }
 
-        res.setHeader("Content-Type", "model/gltf-binary");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+      const ext = path.extname(name).toLowerCase();
 
-        return res.sendFile(filePath);
+res.setHeader(
+    "Content-Type",
+    ext === ".vrm"
+        ? "model/gltf-binary"
+        : "model/gltf-binary"
+);
+
+res.setHeader("Access-Control-Allow-Origin", "*");
+
+return res.sendFile(filePath);
 
     } catch (error) {
         console.error("Error serving 3D model:", error);
 
         return res.status(500).json({
             error: "Failed to load 3D model"
+        });
+    }
+});
+
+three.post("/speak", async (req, res) => {
+    try {
+        const text = req.body.text;
+
+        if (!text || typeof text !== "string") {
+            return res.status(400).json({
+                error: "Text is required"
+            });
+        }
+
+        if (text.length > 1000) {
+            return res.status(400).json({
+                error: "Text is too long"
+            });
+        }
+
+        // Send text to local Piper server
+        const response = await fetch(
+            "http://127.0.0.1:5000/synthesize",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Piper synthesis failed");
+        }
+
+        const audioBuffer = Buffer.from(
+            await response.arrayBuffer()
+        );
+
+        res.setHeader("Content-Type", "audio/wav");
+        res.setHeader("Content-Length", audioBuffer.length);
+
+        return res.send(audioBuffer);
+
+    } catch (error) {
+        console.error("Piper TTS error:", error);
+
+        return res.status(500).json({
+            error: "Speech generation failed"
         });
     }
 });
